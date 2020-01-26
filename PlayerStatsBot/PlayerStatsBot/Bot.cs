@@ -33,6 +33,8 @@ namespace PlayerStatsBot
       Client.MessageReceived += OnMessageReceived;
       await Client.LoginAsync(TokenType.Bot, program.Config.BotToken);
       await Client.StartAsync();
+      if (!File.Exists(program.Config.SyncFile))
+        File.Create(program.Config.SyncFile).Close();
       await Task.Delay(-1);
     }
 
@@ -69,33 +71,47 @@ namespace PlayerStatsBot
 
     private async Task DoSyncAsync(ICommandContext context)
     {
-      StreamReader reader = new StreamReader(program.Config.SyncFile);
-      StringReader input = new StringReader(reader.ReadToEnd());
-      reader.Close();
-      YamlStream yaml = new YamlStream();
-      yaml.Load(input);
-      YamlMappingNode mapping = (YamlMappingNode) yaml.Documents[0].RootNode;
-      Sync[] syncs = mapping.Children.Select(entry => new Sync
+      string[] args = context.Message.Content.Split(' ');
+      try
       {
-        DiscordId = ulong.Parse(entry.Key.ToString()),
-        SteamId = entry.Value.ToString()
-      }).ToArray();
-      if (syncs.Length != 0 && syncs.Any(s => (long) s.DiscordId == (long) context.Message.Author.Id))
-        await context.Channel.SendMessageAsync("Your Discord is already synced!");
-      else
-      {
-        string[] args = context.Message.Content.Split(new string[1]
+        if (!string.IsNullOrEmpty(File.ReadAllText(program.Config.SyncFile)))
         {
-          " "
-        }, StringSplitOptions.None);
-        if (args.Length == 1 || !ulong.TryParse(args[1], out ulong _))
-          await context.Channel.SendMessageAsync("Please provide a valid SteamID.");
+          StreamReader reader = new StreamReader(program.Config.SyncFile);
+          StringReader input = new StringReader(reader.ReadToEnd());
+          reader.Close();
+          YamlStream yaml = new YamlStream();
+          yaml.Load(input);
+          YamlMappingNode mapping = (YamlMappingNode) yaml.Documents[0].RootNode;
+          Sync[] syncs = mapping.Children.Select(entry => new Sync
+          {
+            DiscordId = ulong.Parse(entry.Key.ToString()), SteamId = entry.Value.ToString()
+          }).ToArray();
+          if (syncs.Length != 0 && syncs.Any(s => (long) s.DiscordId == (long) context.Message.Author.Id))
+            await context.Channel.SendMessageAsync("Your Discord is already synced!");
+          else
+          {
+            if (args.Length == 1 || !ulong.TryParse(args[1], out ulong _))
+              await context.Channel.SendMessageAsync("Please provide a valid SteamID.");
+            else
+            {
+              string newSync = ((long) context.Message.Author.Id) + ": '" + args[1] + "@steam'";
+              File.AppendAllText(program.Config.SyncFile, newSync + Environment.NewLine);
+              await context.Channel.SendMessageAsync("@" + context.Message.Author +
+                                                     " Your Discord is now synced with the provided SteamID!");
+            }
+          }
+        }
         else
         {
           string newSync = ((long) context.Message.Author.Id) + ": '" + args[1] + "@steam'";
           File.AppendAllText(program.Config.SyncFile, newSync + Environment.NewLine);
-          await context.Channel.SendMessageAsync("@" + context.Message.Author + " Your Discord is now synced with the provided SteamID!");
+          await context.Channel.SendMessageAsync("@" + context.Message.Author +
+                                                 " Your Discord is now synced with the provided SteamID!");
         }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
@@ -257,7 +273,7 @@ namespace PlayerStatsBot
         }
         else if (args.Length > 1 && ulong.TryParse(args[1], out result1))
         {
-          steamId = args[1];
+          steamId = args[1] + "@steam";
           path = program.Config.StatsFile + "/" + steamId + ".txt";
           Console.WriteLine(path);
           if (!File.Exists(path))

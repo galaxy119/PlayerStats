@@ -7,17 +7,19 @@ namespace PlayerStats
 	{
 		internal static Stats LoadStats(string userId)
 		{
+			Plugin.Info($"Loading stats for userid: {userId}");
 			string path = Path.Combine(Plugin.StatFilePath, $"{userId}.txt");
 
 			if (File.Exists(path))
 				return DeserializeStats(path);
 			else
 			{
-				File.Create(path).Close();
+				Plugin.Info($"Current file {path} not found, creating and returning new stats.");
 				return new Stats()
 				{
 					UserId = userId,
-					RoundsPlayed = 1,
+					SecondsPlayed = 0,
+					RoundsPlayed = 0,
 					Deaths = 0,
 					Suicides = 0,
 					Escapes = 0,
@@ -34,6 +36,7 @@ namespace PlayerStats
 
 		internal static void SaveStats(Stats stats)
 		{
+			Plugin.Info($"Saving stats for {stats.UserId}..");
 			stats.Krd = (double) stats.Kills / stats.Deaths;
 			string[] write = new[]
 			{
@@ -54,10 +57,12 @@ namespace PlayerStats
 
 			string path = Path.Combine(Plugin.StatFilePath, $"{stats.UserId}.txt");
 			File.WriteAllLines(path, write);
+			Plugin.Info($"Stats for {stats.UserId} saved to {path}");
 		}
 
 		private static Stats DeserializeStats(string path)
 		{
+			Plugin.Info($"Deserializing stats from: {path}..");
 			string[] read = File.ReadAllLines(path);
 			Stats stats = new Stats
 			{
