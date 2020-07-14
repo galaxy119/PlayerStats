@@ -1,10 +1,13 @@
 using System;
 using System.IO;
-using EXILED;
+using Exiled.API.Features;
+using Exiled.Events;
+using Player = Exiled.Events.Handlers.Player;
+using Server = Exiled.Events.Handlers.Server;
 
 namespace PlayerStats
 {
-	public class Plugin : EXILED.Plugin
+	public class Plugin : Exiled.API.Features.Plugin<Config>
 	{
 		public EventHandlers EventHandlers;
 
@@ -12,41 +15,31 @@ namespace PlayerStats
 			Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Plugins"),
 				"PlayerStats");
 
-		public override void OnEnable()
+		public override void OnEnabled()
 		{
 			if (!Directory.Exists(StatFilePath))
 				Directory.CreateDirectory(StatFilePath);
 			
-			Info($"Loading {getName}..");
 			EventHandlers = new EventHandlers(this);
-			Events.WaitingForPlayersEvent += EventHandlers.OnWaitingForPlayers;
-			Events.RoundStartEvent += EventHandlers.OnRoundStart;
-			Events.RoundEndEvent += EventHandlers.OnRoundEnd;
-			Events.PlayerJoinEvent += EventHandlers.OnPlayerJoin;
-			Events.PlayerDeathEvent += EventHandlers.OnPlayerDeath;
-			Events.GrenadeThrownEvent += EventHandlers.OnThrowGrenade;
-			Events.UseMedicalItemEvent += EventHandlers.OnMedicalItem;
-			
-			Info($"{getName} loaded.");
+			Server.WaitingForPlayers += EventHandlers.OnWaitingForPlayers;
+			Server.RoundStarted += EventHandlers.OnRoundStart;
+			Server.RoundEnded += EventHandlers.OnRoundEnd;
+			Player.Joined += EventHandlers.OnPlayerJoin;
+			Player.Died += EventHandlers.OnPlayerDeath;
+			Player.ThrowingGrenade += EventHandlers.OnThrowGrenade;
+			Player.MedicalItemUsed += EventHandlers.OnMedicalItem;
 		}
 
-		public override void OnDisable()
+		public override void OnDisabled()
 		{
-			Events.WaitingForPlayersEvent -= EventHandlers.OnWaitingForPlayers;
-			Events.RoundStartEvent -= EventHandlers.OnRoundStart;
-			Events.RoundEndEvent -= EventHandlers.OnRoundEnd;
-			Events.PlayerJoinEvent -= EventHandlers.OnPlayerJoin;
-			Events.PlayerDeathEvent -= EventHandlers.OnPlayerDeath;
-			Events.GrenadeThrownEvent -= EventHandlers.OnThrowGrenade;
-			Events.UseMedicalItemEvent -= EventHandlers.OnMedicalItem;
+			Server.WaitingForPlayers -= EventHandlers.OnWaitingForPlayers;
+			Server.RoundStarted -= EventHandlers.OnRoundStart;
+			Server.RoundEnded -= EventHandlers.OnRoundEnd;
+			Player.Joined -= EventHandlers.OnPlayerJoin;
+			Player.Died -= EventHandlers.OnPlayerDeath;
+			Player.ThrowingGrenade -= EventHandlers.OnThrowGrenade;
+			Player.MedicalItemUsed -= EventHandlers.OnMedicalItem;
 			EventHandlers = null;
 		}
-
-		public override void OnReload()
-		{
-			
-		}
-
-		public override string getName { get; } = "Player Stats";
 	}
 }

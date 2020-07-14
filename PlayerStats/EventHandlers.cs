@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using EXILED;
+using Exiled.API.Features;
+using Exiled.Events.EventArgs;
 using Grenades;
 using MEC;
 
@@ -38,9 +39,9 @@ namespace PlayerStats
 			}
 		}
 
-		public void OnRoundEnd()
+		public void OnRoundEnd(RoundEndedEventArgs ev)
 		{
-			Plugin.Debug("Round is ending.");
+			Log.Debug("Round is ending.");
 			foreach (CoroutineHandle handle in Coroutines)
 				Timing.KillCoroutines(handle);
 			try
@@ -50,72 +51,80 @@ namespace PlayerStats
 			}
 			catch (Exception e)
 			{
-				Plugin.Error($"Round End error: {e}");
+				Log.Error($"Round End error: {e}");
 			}
 		}
 
-		public void OnPlayerJoin(PlayerJoinEvent ev)
+		public void OnPlayerJoin(JoinedEventArgs ev)
 		{
-			if (string.IsNullOrEmpty(ev.Player.characterClassManager.UserId) || ev.Player.characterClassManager.IsHost || ev.Player.nicknameSync.MyNick == "Dedicated Server")
-				return;
-			
-			if (!Stats.ContainsKey(ev.Player.characterClassManager.UserId))
-				Stats.Add(ev.Player.characterClassManager.UserId, Methods.LoadStats(ev.Player.characterClassManager.UserId));
+			try
+			{
+				if (string.IsNullOrEmpty(ev.Player.UserId) || ev.Player.IsHost || ev.Player.Nickname == "Dedicated Server")
+					return;
+
+				if (!Stats.ContainsKey(ev.Player.UserId))
+					Stats.Add(ev.Player.UserId,
+						Methods.LoadStats(ev.Player.UserId));
+			}
+			catch (Exception e)
+			{
+				Log.Error(e.ToString());
+			}
 		}
 
-		public void OnPlayerDeath(ref PlayerDeathEvent ev)
+		public void OnPlayerDeath(DiedEventArgs ev)
 		{
-			Plugin.Info("Player death event..");
-			if (ev.Player == null || string.IsNullOrEmpty(ev.Player.characterClassManager.UserId))
+			Log.Info("Player death event..");
+			if (ev.Target == null || string.IsNullOrEmpty(ev.Target.UserId))
 				return;
 			
-			Plugin.Info($"Player: {ev.Player.nicknameSync.MyNick} {ev.Player.characterClassManager.UserId}");
-			if (Stats.ContainsKey(ev.Player.characterClassManager.UserId))
+			Log.Info($"Player: {ev.Target.Nickname} {ev.Target.UserId}");
+			if (Stats.ContainsKey(ev.Target.UserId))
 			{
-				Plugin.Info($"Adding stats to {ev.Player.characterClassManager.UserId}");
-				Plugin.Info($"Attacker info for {ev.Player.characterClassManager.UserId} - {ev.Info.Attacker}");
-				Stats[ev.Player.characterClassManager.UserId].Deaths++;
-				Stats[ev.Player.characterClassManager.UserId].LastKiller = ev.Info.Attacker;
-				if (ev.Killer == null || ev.Player == ev.Killer ||
-				    string.IsNullOrEmpty(ev.Killer.characterClassManager.UserId))
+				Log.Info($"Adding stats to {ev.Target.UserId}");
+				Log.Info($"Attacker info for {ev.Target.UserId} - {ev.Killer.UserId}");
+				Stats[ev.Target.UserId].Deaths++;
+				Stats[ev.Target.UserId].LastKiller = ev.Killer.Nickname;
+				if (ev.Killer == null || ev.Target == ev.Killer ||
+				    string.IsNullOrEmpty(ev.Killer.UserId))
 				{
-					Plugin.Info($"Counting as suicide..{ev.Player.characterClassManager.UserId}");
-					Stats[ev.Player.characterClassManager.UserId].Suicides++;
+					Log.Info($"Counting as suicide..{ev.Target.UserId}");
+					Stats[ev.Target.UserId].Suicides++;
 					return;
 				}
 			}
 
-			if (ev.Killer == null || string.IsNullOrEmpty(ev.Killer.characterClassManager.UserId))
+			if (ev.Killer == null || string.IsNullOrEmpty(ev.Killer.UserId))
 				return;
-			Plugin.Info($"Attacker: {ev.Killer.nicknameSync.MyNick} - {ev.Killer.characterClassManager.UserId}");
-			if (Stats.ContainsKey(ev.Killer.characterClassManager.UserId))
+			Log.Info($"Attacker: {ev.Killer.Nickname} - {ev.Killer.UserId}");
+			if (Stats.ContainsKey(ev.Killer.UserId))
 			{
-				Plugin.Debug($"Adding stats for killer {ev.Killer.characterClassManager.UserId}");
-				Stats[ev.Killer.characterClassManager.UserId].Kills++;
-				Stats[ev.Killer.characterClassManager.UserId].LastVictim =
-					ev.Player.nicknameSync.MyNick + $"({ev.Player.characterClassManager.UserId})";
+				Log.Debug($"Adding stats for killer {ev.Killer.UserId}");
+				Stats[ev.Killer.UserId].Kills++;
+				Stats[ev.Killer.UserId].LastVictim =
+					ev.Target.Nickname + $"({ev.Target.UserId})";
 
-				if (!ev.Killer.characterClassManager.IsHuman())
+				if (ev.Killer.Team == Team.SCP)
 				{
-					Plugin.Info($"{ev.Killer.characterClassManager.UserId} is not human, counting as SCP kill. {ev.Killer.characterClassManager.CurClass}");
-					Stats[ev.Killer.characterClassManager.UserId].ScpKills++;
+					Log.Info($"{ev.Killer.UserId} is not human, counting as SCP kill. {ev.Killer.Role}");
+					Stats[ev.Killer.UserId].ScpKills++;
 				}
 			}
 		}
 
-		public void OnThrowGrenade(ref GrenadeThrownEvent ev)
+		public void OnThrowGrenade(ThrowingGrenadeEventArgs ev)
 		{
-			GrenadeSettings settings = ev.Gm.availableGrenades[ev.Id];
+			GrenadeSettings settings = ev.GrenadeManager.availableGrenades[ev.Id];
 			ItemType type = settings.inventoryID;
 
-			if (type == ItemType.SCP018 && Stats.ContainsKey(ev.Player.characterClassManager.UserId))
-				Stats[ev.Player.characterClassManager.UserId].Scp018Throws++;
+			if (type == ItemType.SCP018 && Stats.ContainsKey(ev.Player.UserId))
+				Stats[ev.Player.UserId].Scp018Throws++;
 		}
 
-		public void OnMedicalItem(MedicalItemEvent ev)
+		public void OnMedicalItem(UsedMedicalItemEventArgs ev)
 		{
-			if (ev.Item == ItemType.SCP207 && Stats.ContainsKey(ev.Player.characterClassManager.UserId))
-				Stats[ev.Player.characterClassManager.UserId].Scp207Uses++;
+			if (ev.Item == ItemType.SCP207 && Stats.ContainsKey(ev.Player.UserId))
+				Stats[ev.Player.UserId].Scp207Uses++;
 		}
 	}
 }
