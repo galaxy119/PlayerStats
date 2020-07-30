@@ -39,9 +39,9 @@ namespace PlayerStats
 			}
 		}
 
-		public void OnRoundEnd(RoundEndedEventArgs ev)
+		public void OnRestartingRound()
 		{
-			Log.Debug("Round is ending.");
+			Log.Debug("Round is restarting.");
 			foreach (CoroutineHandle handle in Coroutines)
 				Timing.KillCoroutines(handle);
 			try
@@ -51,7 +51,7 @@ namespace PlayerStats
 			}
 			catch (Exception e)
 			{
-				Log.Error($"Round End error: {e}");
+				Log.Error($"Round Restart error: {e}");
 			}
 		}
 
