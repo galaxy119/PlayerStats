@@ -7,7 +7,7 @@ namespace PlayerStatsBot
 			BotPrefix = "!",
 			BotToken = "",
 			SyncFile = "DiscordSteamSyncs.yml",
-			StatsFile = "/home/scp/.config/Plugins/PlayerStats",
+			StatsFile = "/home/scp/.config/EXILED/Plugins/PlayerStats",
 			StaffID = 0
 		};
 
