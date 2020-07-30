@@ -23,7 +23,7 @@ namespace PlayerStats
 			EventHandlers = new EventHandlers(this);
 			Server.WaitingForPlayers += EventHandlers.OnWaitingForPlayers;
 			Server.RoundStarted += EventHandlers.OnRoundStart;
-			Server.RoundEnded += EventHandlers.OnRoundEnd;
+			Server.RestartingRound += EventHandlers.OnRestartingRound;
 			Player.Joined += EventHandlers.OnPlayerJoin;
 			Player.Died += EventHandlers.OnPlayerDeath;
 			Player.ThrowingGrenade += EventHandlers.OnThrowGrenade;
@@ -34,7 +34,7 @@ namespace PlayerStats
 		{
 			Server.WaitingForPlayers -= EventHandlers.OnWaitingForPlayers;
 			Server.RoundStarted -= EventHandlers.OnRoundStart;
-			Server.RoundEnded -= EventHandlers.OnRoundEnd;
+			Server.RestartingRound -= EventHandlers.OnRestartingRound;
 			Player.Joined -= EventHandlers.OnPlayerJoin;
 			Player.Died -= EventHandlers.OnPlayerDeath;
 			Player.ThrowingGrenade -= EventHandlers.OnThrowGrenade;
