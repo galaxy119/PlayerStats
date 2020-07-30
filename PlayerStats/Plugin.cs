@@ -12,7 +12,7 @@ namespace PlayerStats
 		public EventHandlers EventHandlers;
 
 		internal static string StatFilePath =
-			Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Plugins"),
+			Path.Combine(Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EXILED"), "Plugins"),
 				"PlayerStats");
 
 		public override void OnEnabled()
