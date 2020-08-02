@@ -74,21 +74,23 @@ namespace PlayerStats
 
 		public void OnPlayerDeath(DiedEventArgs ev)
 		{
-			Log.Info("Player death event..");
+			Log.Debug("Player death event..", plugin.Config.Debug);
 			if (ev.Target == null || string.IsNullOrEmpty(ev.Target.UserId))
 				return;
 			
-			Log.Info($"Player: {ev.Target.Nickname} {ev.Target.UserId}");
+			Log.Debug($"Player: {ev.Target.Nickname} {ev.Target.UserId}", plugin.Config.Debug);
 			if (Stats.ContainsKey(ev.Target.UserId))
 			{
-				Log.Info($"Adding stats to {ev.Target.UserId}");
-				Log.Info($"Attacker info for {ev.Target.UserId} - {ev.Killer.UserId}");
+				Log.Debug($"Adding stats to {ev.Target.UserId}", plugin.Config.Debug);
+				Log.Debug($"Attacker info for {ev.Target.UserId} - {ev.Killer.UserId}", plugin.Config.Debug);
 				Stats[ev.Target.UserId].Deaths++;
-				Stats[ev.Target.UserId].LastKiller = ev.Killer.Nickname;
-				if (ev.Killer == null || ev.Target == ev.Killer ||
-				    string.IsNullOrEmpty(ev.Killer.UserId))
+				if (ev.Killer.Nickname.ToLower().Contains("anti-cheat") || ev.Killer.Nickname.ToLower().Contains("anticheat"))
+					Stats[ev.Target.UserId].LastKiller = "Anticheat";
+				else
+					Stats[ev.Target.UserId].LastKiller = ev.Killer.Nickname;
+				if (ev.Killer == null || ev.Target == ev.Killer || string.IsNullOrEmpty(ev.Killer.UserId))
 				{
-					Log.Info($"Counting as suicide..{ev.Target.UserId}");
+					Log.Debug($"Counting as suicide..{ev.Target.UserId}", plugin.Config.Debug);
 					Stats[ev.Target.UserId].Suicides++;
 					return;
 				}
@@ -96,17 +98,17 @@ namespace PlayerStats
 
 			if (ev.Killer == null || string.IsNullOrEmpty(ev.Killer.UserId))
 				return;
-			Log.Info($"Attacker: {ev.Killer.Nickname} - {ev.Killer.UserId}");
+			Log.Debug($"Attacker: {ev.Killer.Nickname} - {ev.Killer.UserId}", plugin.Config.Debug);
 			if (Stats.ContainsKey(ev.Killer.UserId))
 			{
-				Log.Debug($"Adding stats for killer {ev.Killer.UserId}");
+				Log.Debug($"Adding stats for killer {ev.Killer.UserId}", plugin.Config.Debug);
 				Stats[ev.Killer.UserId].Kills++;
 				Stats[ev.Killer.UserId].LastVictim =
 					ev.Target.Nickname + $"({ev.Target.UserId})";
 
 				if (ev.Killer.Team == Team.SCP)
 				{
-					Log.Info($"{ev.Killer.UserId} is not human, counting as SCP kill. {ev.Killer.Role}");
+					Log.Debug($"{ev.Killer.UserId} is not human, counting as SCP kill. {ev.Killer.Role}", plugin.Config.Debug);
 					Stats[ev.Killer.UserId].ScpKills++;
 				}
 			}
