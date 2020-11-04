@@ -116,7 +116,7 @@ namespace PlayerStats
 
 		public void OnThrowGrenade(ThrowingGrenadeEventArgs ev)
 		{
-			GrenadeSettings settings = ev.GrenadeManager.availableGrenades[ev.Id];
+			GrenadeSettings settings = ev.GrenadeManager.availableGrenades[(int)ev.Type];
 			ItemType type = settings.inventoryID;
 
 			if (type == ItemType.SCP018 && Stats.ContainsKey(ev.Player.UserId))

@@ -9,6 +9,9 @@ namespace PlayerStats
 {
 	public class Plugin : Exiled.API.Features.Plugin<Config>
 	{
+		public override string Author { get; } = "galaxy119";
+		public override Version Version { get; } = new Version(2, 0,0);
+		public override Version RequiredExiledVersion { get; } = new Version(2,1,12);
 		public EventHandlers EventHandlers;
 
 		internal static string StatFilePath = Path.Combine(Paths.Plugins, "PlayerStats");
